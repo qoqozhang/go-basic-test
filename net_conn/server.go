@@ -21,7 +21,6 @@ func Server() {
 		}
 		go func(c net.Conn) {
 			io.Copy(c, c)
-			c.Close()
 		}(conn)
 	}
 }

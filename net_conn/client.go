@@ -13,5 +13,5 @@ func Client() {
 		log.Fatalf("connect to server faild: %v\n", err)
 	}
 	conn.Write([]byte("zhang"))
-	defer conn.Close()
+
 }
