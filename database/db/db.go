@@ -22,7 +22,7 @@ type database struct {
 func New(ctx context.Context) Database {
 	db, err := sql.Open("sqlite3", "./foo.db")
 	if err != nil {
-		log.Fatalf("Error opening database: %v", err)
+		log.Fatalf("Error opening database: %v\n", err)
 	}
 	_database := database{
 		Ctx: ctx,
