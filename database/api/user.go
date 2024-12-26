@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/qoqozhang/go-basic-test.git/database/db"
-	"github.com/qoqozhang/go-basic-test.git/database/model"
+	"github.com/qoqozhang/go-basic-test.git/database/gorm/model"
 	"net/http"
 )
 
@@ -12,7 +12,7 @@ type UserAPI struct {
 }
 
 type UserParameters struct {
-	model.User
+	*model.User
 }
 
 func (api *UserAPI) Create(ctx *gin.Context) {
@@ -30,7 +30,7 @@ func (api *UserAPI) Create(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := api.DB.CreateUser(ctx, &params.User); err != nil {
+	if err := api.DB.CreateUser(ctx, params.User); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

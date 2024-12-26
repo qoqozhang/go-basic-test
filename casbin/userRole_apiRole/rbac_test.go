@@ -1,6 +1,7 @@
-package rbac
+package userRole_apiRole
 
 import (
+	"fmt"
 	"github.com/casbin/casbin/v3"
 	"github.com/casbin/casbin/v3/model"
 	defaultrolemanager "github.com/casbin/casbin/v3/rbac/default-role-manager"
@@ -34,6 +35,10 @@ var requests = [][]interface{}{
 	{"admin", "/system/bbb", "write"},   // true
 	{"admin", "/status/", "write"},      // true
 	{"admin", "/status/list", "read"},   // true
+	{"audit", "/status/", "read"},       // true
+	{"audit", "/system/log", "read"},    //true
+	{"audit", "/lists/", "read"},        //true
+	{"audit", "/users/", "write"},       //false
 }
 
 func TestAcl(t *testing.T) {
@@ -42,34 +47,38 @@ func TestAcl(t *testing.T) {
 
 	groupPolicies := [][]string{
 		/*
-			用户和用户角色的映射
+			用户和用户角色的映射， 字段: 用户---用户角色
 			admin 同属于administrators
 			user 同数据user 用户角色
 		*/
-		{"admin", "administrators"},
-		{"user", "users"},
+		{"admin", "administrators"}, // admin 属于administrators 角色
+		{"user", "users"},           //user 属于 users角色
+		{"audit", "audit"},          // audit审计员属于audit角色
 	}
 	g2Polices := [][]string{
 		/*
-			普通资源角色
+			普通资源角色， 字段： 资源---资源角色
 		*/
 		{"/status/*", "commons"},
 		{"/servers/*", "commons"},
 		{"/lists/*", "commons"},
+		{"/system/log", "audit"}, //查看日志权限的资源角色
 
 		/*
 			管理员角色
 		*/
-		{"*", "all"},
+		{"/*", "all"}, //管理员角色可以访问所有路径
 	}
 	policies := [][]string{
 		/*
-			角色和资源角色的映射
+			角色和资源角色的映射,  用户角色---资源角色---权限
 			administrators用户角色 可以访问 all资源角色
 			users普通用户角色  可以访问 commons普通资源角色
 		*/
 		{"administrators", "all", ".*"},
 		{"users", "commons", ".*"},
+		{"audit", "audit", "read"}, // 审计员角色可以查看日志
+		{"audit", "commons", "read"},
 	}
 
 	_, _ = e.AddPolicies(policies)
@@ -77,6 +86,7 @@ func TestAcl(t *testing.T) {
 	_, _ = e.AddNamedGroupingPolicies("g2", g2Polices)
 
 	e.GetRoleManager().(*defaultrolemanager.RoleManager).AddMatchingFunc(util.KeyMatch)
+	fmt.Println(e.GetImplicitRolesForUser("audit"))
 
 	for _, request := range requests {
 		res, err := e.Enforce(request...)
