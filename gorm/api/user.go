@@ -13,8 +13,8 @@ type UserAPI struct {
 	DB db.Database
 }
 type userParams struct {
-	Name             string `json:"name" binding:"required"`
-	CreditCardNumber string `json:"credit_card" binding:"required"`
+	Name      string   `json:"name" binding:"required"`
+	Languages []string `json:"languages" binding:"required"`
 }
 
 func (api *UserAPI) Create(c *gin.Context) {
@@ -23,9 +23,13 @@ func (api *UserAPI) Create(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, utils.ResponseJson(nil, err.Error(), http.StatusBadRequest))
 		return
 	}
+	var languages []model.Language
+	for _, language := range params.Languages {
+		languages = append(languages, model.Language{Name: language})
+	}
 	user := model.User{
-		Name:       params.Name,
-		CreditCard: model.CreditCard{Number: params.CreditCardNumber},
+		Name:      params.Name,
+		Languages: languages,
 	}
 	err := api.DB.CreateUser(&user)
 	if err != nil {
@@ -61,8 +65,12 @@ func (api *UserAPI) Update(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, utils.ResponseJson(nil, err.Error(), http.StatusInternalServerError))
 		return
 	}
+	var languages []model.Language
+	for _, language := range params.Languages {
+		languages = append(languages, model.Language{Name: language})
+	}
 	user.Name = params.Name
-	user.CreditCard.Number = params.CreditCardNumber
+	user.Languages = languages
 	if err = api.DB.UpdateUser(user); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, utils.ResponseJson(nil, err.Error(), http.StatusInternalServerError))
 	} else {

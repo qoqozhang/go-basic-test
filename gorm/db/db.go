@@ -36,7 +36,7 @@ func New(ctx context.Context) Database {
 	if err := database.HealthCheck(); err != nil {
 		log.Fatalf("database health check failed: %v", err)
 	}
-	sql.AutoMigrate(&model.User{}, &model.Company{}, &model.CreditCard{})
+	sql.AutoMigrate(&model.User{}, &model.Language{})
 	return &database
 }
 
