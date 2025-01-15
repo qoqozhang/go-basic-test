@@ -8,9 +8,10 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "server-cli",
-	Short: "server-cli",
-	Long:  "A server-cli tools",
+	Use:     "server-cli",
+	Short:   "server-cli",
+	Long:    "A server-cli tools",
+	Version: "0.0.1",
 	Run: func(cmd *cobra.Command, args []string) {
 		tip()
 	},
@@ -31,7 +32,6 @@ func tip() {
 
 func Execute() {
 	rootCmd.AddCommand(addCmd)
-	rootCmd.AddCommand(versionCmd)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(-1)
 	}
