@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,44 +13,35 @@ import (
 // doClean 模拟做程序的清理工作
 func doClean(closed chan struct{}) {
 	// time.Sleep 模拟清理工作
-	time.Sleep(60 * time.Second)
+	i := rand.Int() % 10
+	fmt.Printf("开始执行%d 秒的清理工作.\n", i)
+	time.Sleep(time.Second * time.Duration(i))
 	// 清理完成以后关闭closed channel
 	close(closed)
 }
 
 func main() {
-	var closing = make(chan struct{})
+	//TODO 模拟程序正常工作
+	fmt.Println("程序运行中...")
+
+	// 捕获程序退出信号
 	var closed = make(chan struct{})
-
-	go func() {
-		for {
-			select {
-			case <-closing:
-				return
-			default:
-				// 模拟业务处理
-				time.Sleep(1000 * time.Second)
-			}
-		}
-	}()
-
 	notifyC := make(chan os.Signal)
 	signal.Notify(notifyC, syscall.SIGINT, syscall.SIGTERM)
-	fmt.Println("等待程序退出信号")
+	fmt.Println("键入CTRL + C 结束程序...")
 	<-notifyC
-
-	// 关闭执行执行的业务程序
-	close(closing)
+	fmt.Println("开始执行清理工作...")
 
 	// 开始执行清理工作，清理完成以后会返回closed的channel
 	go doClean(closed)
 
 	// 防止清理工作执行太久，执行超时操作
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	select {
 	case <-closed:
-	case <-time.After(1 * time.Second):
-		fmt.Println("timeout")
+		fmt.Println("清理完成...")
+	case <-ctx.Done():
+		fmt.Println("清理工作超时...")
 	}
-	fmt.Println("process is exit")
-
+	fmt.Println("程序退出完成...")
 }
