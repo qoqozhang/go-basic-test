@@ -1,7 +1,9 @@
 package zap_logger
 
 import (
+	"bufio"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sync"
@@ -54,6 +56,35 @@ func (log *RotateFileLog) Write(p []byte) (n int, err error) {
 	n, err = log.file.Write(p)
 	return n, err
 }
+func (log *RotateFileLog) Read(p []byte) (n int, err error) {
+	log.mu.Lock()
+	defer log.mu.Unlock()
+	if log.file == nil {
+		if err := log.openExistingOrNew(); err != nil {
+			return 0, err
+		}
+	}
+	return log.file.Read(p)
+}
+func (log *RotateFileLog) ReadLines(offset, size int) (p []string) {
+	log.mu.Lock()
+	defer log.mu.Unlock()
+	if log.file == nil {
+		if err := log.openExistingOrNew(); err != nil {
+			return nil
+		}
+	}
+	scanner := bufio.NewScanner(log.file)
+	currentLine := 1
+	lastLine := offset + size
+	for scanner.Scan() {
+		if currentLine >= offset && currentLine < lastLine {
+			p = append(p, scanner.Text())
+		}
+		currentLine++
+	}
+	return p
+}
 
 // deleteMaxAgeBeforeLog 删除保留保留日志之前的日志
 func (log *RotateFileLog) deleteMaxAgeBeforeLog() error {
@@ -102,7 +133,7 @@ func (log *RotateFileLog) rotate() error {
 
 // openNew 打开一个新的文件
 func (log *RotateFileLog) openNew(filename string) error {
-	f, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
@@ -122,7 +153,7 @@ func (log *RotateFileLog) openExistingOrNew() error {
 	if os.IsNotExist(err) {
 		return log.openNew(logfile)
 	}
-	file, err := os.OpenFile(logfile, os.O_APPEND|os.O_WRONLY, 0600)
+	file, err := os.OpenFile(logfile, os.O_APPEND|os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}
@@ -142,7 +173,7 @@ func (log *RotateFileLog) getAbsoluteFilePath() (fileFullName string, err error)
 		return "", err
 	}
 	if log.FilePath == "" {
-		fileFullName = filePath + "/logs/"
+		fileFullName = path.Join(filePath, "logs")
 	}
 	// 判断是否存在，不存在则尝试创建
 	if _, err := os.Stat(fileFullName); os.IsNotExist(err) {
@@ -161,6 +192,6 @@ func (log *RotateFileLog) GetCurrentLogName() (logfile string, err error) {
 	if err != nil {
 		return "", err
 	}
-	logfile = filepath + "/" + log.FilePrefix + "_" + currentDay + ".log"
+	logfile = path.Join(filepath, log.FilePrefix+"_"+currentDay+".log")
 	return logfile, nil
 }
