@@ -138,8 +138,7 @@ func (log *RotateFileLog) openNew(filename string) error {
 		return err
 	}
 	log.file = f
-	currentDay := time.Now().Format("2006-01-02")
-	log.currentDay = currentDay
+	log.currentDay = time.Now().Format("2006-01-02")
 	return nil
 }
 
@@ -158,8 +157,7 @@ func (log *RotateFileLog) openExistingOrNew() error {
 		return err
 	}
 	log.file = file
-	currentDay := time.Now().Format("2006-01-02")
-	log.currentDay = currentDay
+	log.currentDay = time.Now().Format("2006-01-02")
 	return nil
 }
 
@@ -174,10 +172,12 @@ func (log *RotateFileLog) getAbsoluteFilePath() (fileFullName string, err error)
 	}
 	if log.FilePath == "" {
 		fileFullName = path.Join(filePath, "logs")
+	} else {
+		fileFullName = path.Join(log.FilePath, "logs")
 	}
 	// 判断是否存在，不存在则尝试创建
 	if _, err := os.Stat(fileFullName); os.IsNotExist(err) {
-		err := os.Mkdir(fileFullName, 0777)
+		err := os.MkdirAll(fileFullName, 0777)
 		if err != nil {
 			return "", err
 		}
